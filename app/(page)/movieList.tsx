@@ -51,7 +51,10 @@ const MovieList: React.FC = () => {
 
   // 更新渲染轮播图项目函数
   const renderBannerItem: ListRenderItem<FileItem> = ({ item }) => (
-    <View style={styles.bannerItemContainer}>
+    <TouchableOpacity
+      style={styles.bannerItemContainer}
+      onPress={() => router.push(`/player?path=${encodeURIComponent(item.path)}` as Href<string>)}
+    >
       <View style={styles.bannerItem}>
         <Image 
           source={{ uri: item.thumbnail!}} 
@@ -60,7 +63,7 @@ const MovieList: React.FC = () => {
         />
         <Text style={styles.bannerTitle}>{item.name}</Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   // 更新渲染电影项目函数
