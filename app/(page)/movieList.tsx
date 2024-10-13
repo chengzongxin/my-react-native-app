@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, Image, StyleSheet, TextInput, Dimensions, FlatList, ListRenderItem, TouchableOpacity } from 'react-native';
 import { Search } from 'lucide-react-native';
-import { Href, router } from 'expo-router';
+import { Href, router, useNavigation } from 'expo-router';
 
 // 更新接口返回的数据类型
 interface FileItem {
@@ -18,6 +18,7 @@ const BANNER_SPACING = width * 0.1;
 const SERVER_IP = '192.168.10.111';
 
 const MovieList: React.FC = () => {
+  const navigation = useNavigation();
   const [files, setFiles] = useState<FileItem[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(0);
   const flatListRef = useRef<FlatList<FileItem>>(null);
@@ -25,7 +26,18 @@ const MovieList: React.FC = () => {
 
   useEffect(() => {
     fetchFiles();
-  }, []);
+    navigation.setOptions({
+      title: '视频列表',
+      headerStyle: {
+        backgroundColor: 'black',
+      },
+      headerTintColor: 'white',
+      headerTitleStyle: {
+        fontWeight: 'bold',
+      },
+      headerShadowVisible: false, // 移除导航栏底部阴影
+    });
+  }, [navigation]);
 
   const fetchFiles = async () => {
     try {

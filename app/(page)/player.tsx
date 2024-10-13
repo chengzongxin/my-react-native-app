@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
-import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
-import { useLocalSearchParams } from 'expo-router';
+import { Video, ResizeMode } from 'expo-av';
+import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ScreenOrientation from 'expo-screen-orientation';
 
@@ -9,6 +9,7 @@ const { width, height } = Dimensions.get('window');
 
 const Player: React.FC = () => {
   const { path } = useLocalSearchParams<{ path: string }>();
+  const navigation = useNavigation();
   const [videoUrl, setVideoUrl] = useState<string>('');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -18,8 +19,19 @@ const Player: React.FC = () => {
   useEffect(() => {
     if (path) {
       setVideoUrl(path);
+      const fileName = path.split('/').pop() || 'Unknown Video';
+      const decodedFileName = decodeURIComponent(fileName);
+      navigation.setOptions({ 
+        title: decodedFileName,  // 使用解码后的文件名作为标题
+        headerStyle: {
+          backgroundColor: 'black',
+        },
+        headerTintColor: 'white',
+        headerBackTitle: ' ',  // 设置返回按钮文字为空格，这样只显示箭头
+        headerShadowVisible: false,  // 移除导航栏底部阴影
+      });
     }
-  }, [path]);
+  }, [path, navigation]);
 
   const handlePlayPause = async () => {
     if (videoRef.current) {
@@ -120,8 +132,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   video: {
     width: width,
@@ -149,6 +159,20 @@ const styles = StyleSheet.create({
     right: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     paddingVertical: 10,
+  },
+  titleBar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 10,
+    zIndex: 1,
+  },
+  titleText: {
+    color: '#fff',
+    fontSize: 16,
+    textAlign: 'center',
   },
 });
 
