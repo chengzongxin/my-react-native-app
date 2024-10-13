@@ -5,8 +5,11 @@ import axios from 'axios';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons'; // 引入 Expo 图标库
 
-const OPENWEATHERMAP_API_KEY = 'bd21fec9a5a6e33c93fc5f7c08abde21'; // Replace with your actual API key
-const CITY = 'Beijing'; // Replace with the desired city
+// 在文件顶部添加这个颜色数组
+const iconColors = [
+  '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A',
+  '#98D8C8', '#F06292', '#AED581', '#FFD54F'
+];
 
 export default function HomePage() {
   const insets = useSafeAreaInsets();
@@ -14,9 +17,9 @@ export default function HomePage() {
   const [greeting, setGreeting] = useState('');
   const [currentDate, setCurrentDate] = useState('');
   const [currentDay, setCurrentDay] = useState('');
-  const [weather, setWeather] = useState('');
-  const [temperature, setTemperature] = useState('');
-  const [weatherIcon, setWeatherIcon] = useState('');
+  const [weather, setWeather] = useState('晴朗');
+  const [temperature, setTemperature] = useState('25°C');
+  const [weatherIcon, setWeatherIcon] = useState('☀️');
 
   useEffect(() => {
     // 更新日期时间和问候语
@@ -39,37 +42,21 @@ export default function HomePage() {
       setCurrentDay(dayFormatter.format(now));
     };
 
-    // 获取天气数据
-    const fetchWeatherData = async () => {
-      try {
-        // 使用和风天气 API
-        const response = await axios.get(
-          `https://devapi.qweather.com/v7/weather/now?location=101010100&key=YOUR_QWEATHER_API_KEY`
-        );
-        setWeather(response.data.now.text);
-        setTemperature(`${response.data.now.temp}°C`);
-        setWeatherIcon(`https://a.hecdn.net/img/common/icon/202106d/${response.data.now.icon}.png`);
-      } catch (error) {
-        console.error('获取天气数据时出错:', error);
-      }
-    };
-
     updateDateTime();
-    fetchWeatherData();
 
     const timer = setInterval(updateDateTime, 60000); // Update date and time every minute
-    const weatherTimer = setInterval(fetchWeatherData, 1800000); // Update weather every 30 minutes
 
     return () => {
       clearInterval(timer);
-      clearInterval(weatherTimer);
     };
   }, []);
 
   // 图标组件
-  const IconButton = ({ name, label, onPress }) => (
+  const IconButton = ({ name, label, onPress, color }) => (
     <TouchableOpacity style={styles.iconContainer} onPress={onPress}>
-      <Ionicons name={name} size={24} color={isDarkMode ? '#fff' : '#000'} />
+      <View style={[styles.iconBackground, { backgroundColor: color }]}>
+        <Ionicons name={name} size={24} color="#FFFFFF" />
+      </View>
       <Text style={[styles.iconLabel, isDarkMode && styles.darkText]}>{label}</Text>
     </TouchableOpacity>
   );
@@ -96,7 +83,7 @@ export default function HomePage() {
             <Text style={[styles.dayText, isDarkMode && styles.darkText]}>{currentDay}</Text>
           </View>
           <View style={styles.weatherContainer}>
-            {weatherIcon && <Image source={{ uri: weatherIcon }} style={styles.weatherIcon} />}
+            <Text style={[styles.weatherIcon, isDarkMode && styles.darkText]}>{weatherIcon}</Text>
             <View>
               <Text style={[styles.temperatureText, isDarkMode && styles.darkText]}>{temperature}</Text>
               <Text style={[styles.weatherText, isDarkMode && styles.darkText]}>{weather}</Text>
@@ -115,14 +102,14 @@ export default function HomePage() {
           <Text style={styles.bannerSubtext}>更多组件任你配 »</Text>
         </View>
         <View style={styles.iconsGrid}>
-          <IconButton name="videocam" label="视频" onPress={() => router.push('/(page)/movieList')} />
-          <IconButton name="calendar" label="签到" onPress={() => {}} />
-          <IconButton name="briefcase" label="请假" onPress={() => {}} />
-          <IconButton name="time" label="我的加班" onPress={() => {}} />
-          <IconButton name="star" label="积分" onPress={() => {}} />
-          <IconButton name="document-text" label="我的申请" onPress={() => {}} />
-          <IconButton name="person" label="我的档案" onPress={() => {}} />
-          <IconButton name="ellipsis-horizontal" label="更多" onPress={() => {}} />
+          <IconButton name="videocam" label="视频" onPress={() => router.push('/(page)/movieList')} color={iconColors[0]} />
+          <IconButton name="calendar" label="签到" onPress={() => {}} color={iconColors[1]} />
+          <IconButton name="briefcase" label="请假" onPress={() => {}} color={iconColors[2]} />
+          <IconButton name="time" label="我的加班" onPress={() => {}} color={iconColors[3]} />
+          <IconButton name="star" label="积分" onPress={() => {}} color={iconColors[4]} />
+          <IconButton name="document-text" label="我的申请" onPress={() => {}} color={iconColors[5]} />
+          <IconButton name="person" label="我的档案" onPress={() => {}} color={iconColors[6]} />
+          <IconButton name="ellipsis-horizontal" label="更多" onPress={() => {}} color={iconColors[7]} />
         </View>
 
         <View style={styles.promotionBanner}>
@@ -201,8 +188,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   weatherIcon: {
-    width: 50,
-    height: 50,
+    fontSize: 40,
     marginRight: 8,
   },
   temperatureText: {
@@ -249,14 +235,12 @@ const styles = StyleSheet.create({
     width: '25%',
     marginBottom: 16,
   },
-  icon: {
+  iconBackground: {
     width: 50,
     height: 50,
-    backgroundColor: '#ddd',
     borderRadius: 25,
-  },
-  darkIcon: {
-    backgroundColor: '#444',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   iconLabel: {
     marginTop: 8,
