@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, Image, StyleSheet, TextInput, Dimensions, FlatList, ListRenderItem } from 'react-native';
 import { Search } from 'lucide-react-native';
 
@@ -16,9 +16,11 @@ const BANNER_WIDTH = width * 0.8;
 const BANNER_SPACING = width * 0.1;
 const SERVER_IP = '192.168.10.111';
 
-const MovieApp: React.FC = () => {
+const MovieList: React.FC = () => {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(0);
+  const flatListRef = useRef<FlatList<FileItem>>(null);
+  const autoScrollTimer = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     fetchFiles();
@@ -36,15 +38,15 @@ const MovieApp: React.FC = () => {
 
   // 更新渲染轮播图项目函数
   const renderBannerItem: ListRenderItem<FileItem> = ({ item }) => (
-    
-    
-    <View style={styles.bannerItem}>
-      <Image 
-        source={{ uri: item.thumbnail!}} 
-        style={styles.bannerImage} 
-        resizeMode="cover" 
-      />
-      <Text style={styles.bannerTitle}>{item.name}</Text>
+    <View style={styles.bannerItemContainer}>
+      <View style={styles.bannerItem}>
+        <Image 
+          source={{ uri: item.thumbnail!}} 
+          style={styles.bannerImage} 
+          resizeMode="cover" 
+        />
+        <Text style={styles.bannerTitle}>{item.name}</Text>
+      </View>
     </View>
   );
 
@@ -56,9 +58,36 @@ const MovieApp: React.FC = () => {
         style={styles.movieImage} 
         resizeMode="cover" 
       />
-      <Text style={styles.movieTitle} numberOfLines={1}>{item.name}</Text>
+      <Text style={styles.movieTitle} numberOfLines={2}>{item.name}</Text>
     </View>
   );
+
+  const scrollToIndex = useCallback((index: number) => {
+    flatListRef.current?.scrollToOffset({
+      offset: index * (BANNER_WIDTH + BANNER_SPACING),
+      animated: true
+    });
+    setCurrentPage(index);
+  }, []);
+
+  const startAutoScroll = useCallback(() => {
+    autoScrollTimer.current = setInterval(() => {
+      const nextPage = (currentPage + 1) % (files.filter(file => !file.directory).slice(0, 5).length);
+      scrollToIndex(nextPage);
+    }, 3000);
+  }, [currentPage, files, scrollToIndex]);
+
+  const stopAutoScroll = useCallback(() => {
+    if (autoScrollTimer.current) {
+      clearInterval(autoScrollTimer.current);
+      autoScrollTimer.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    startAutoScroll();
+    return () => stopAutoScroll();
+  }, [startAutoScroll, stopAutoScroll]);
 
   const renderHeader = () => (
     <>
@@ -81,6 +110,7 @@ const MovieApp: React.FC = () => {
       
       {/* 轮播图 */}
       <FlatList<FileItem>
+        ref={flatListRef}
         data={files.filter(file => !file.directory).slice(0, 5)}
         renderItem={renderBannerItem}
         keyExtractor={(item) => item.path}
@@ -90,10 +120,17 @@ const MovieApp: React.FC = () => {
         snapToInterval={BANNER_WIDTH + BANNER_SPACING}
         decelerationRate="fast"
         contentContainerStyle={styles.bannerList}
+        onScrollBeginDrag={stopAutoScroll}
+        onScrollEndDrag={startAutoScroll}
         onMomentumScrollEnd={(event) => {
           const newPage = Math.round(event.nativeEvent.contentOffset.x / (BANNER_WIDTH + BANNER_SPACING));
           setCurrentPage(newPage);
         }}
+        getItemLayout={(data, index) => ({
+          length: BANNER_WIDTH + BANNER_SPACING,
+          offset: (BANNER_WIDTH + BANNER_SPACING) * index,
+          index,
+        })}
       />
       
       {/* 轮播图分页指示器 */}
@@ -121,8 +158,9 @@ const MovieApp: React.FC = () => {
         data={files.filter(file => !file.directory)}
         renderItem={renderMovieItem}
         keyExtractor={(item) => item.path}
-        numColumns={3}
-        columnWrapperStyle={styles.movieRow}
+        numColumns={2}
+        columnWrapperStyle={styles.row}
+        contentContainerStyle={styles.listContainer}
       />
     </View>
   );
@@ -138,7 +176,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     paddingVertical: 12,
-    backgroundColor: '#1a1a1a', // 设置和页面一样的背景色
+    backgroundColor: '#000', // 将背景色改为黑色
   },
   category: {
     color: '#999',
@@ -168,9 +206,13 @@ const styles = StyleSheet.create({
   bannerList: {
     paddingHorizontal: BANNER_SPACING / 2,
   },
+  bannerItemContainer: {
+    width: BANNER_WIDTH + BANNER_SPACING,
+    paddingHorizontal: BANNER_SPACING / 2,
+  },
   bannerItem: {
     width: BANNER_WIDTH,
-    marginHorizontal: BANNER_SPACING / 2,
+    overflow: 'hidden',
   },
   bannerImage: {
     width: BANNER_WIDTH,
@@ -213,8 +255,11 @@ const styles = StyleSheet.create({
   movieList: {
     paddingHorizontal: 10,
   },
-  movieRow: {
+  row: {
     justifyContent: 'space-between',
+  },
+  listContainer: {
+    padding: 10,
   },
   movieItem: {
     width: (width - 30) / 2,
@@ -229,7 +274,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     marginTop: 5,
-    width: 100,
+    width: '100%',
   },
   movieInfo: {
     flexDirection: 'row',
@@ -246,4 +291,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default MovieApp;
+export default MovieList;
