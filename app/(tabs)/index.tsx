@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image, StatusBar } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import axios from 'axios';
 import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons'; // 引入 Expo 图标库
 
 const OPENWEATHERMAP_API_KEY = 'bd21fec9a5a6e33c93fc5f7c08abde21'; // Replace with your actual API key
 const CITY = 'Beijing'; // Replace with the desired city
 
 export default function HomePage() {
+  const insets = useSafeAreaInsets();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [greeting, setGreeting] = useState('');
   const [currentDate, setCurrentDate] = useState('');
@@ -17,6 +19,7 @@ export default function HomePage() {
   const [weatherIcon, setWeatherIcon] = useState('');
 
   useEffect(() => {
+    // 更新日期时间和问候语
     const updateDateTime = () => {
       const now = new Date();
       const currentHour = now.getHours();
@@ -28,21 +31,26 @@ export default function HomePage() {
         setGreeting('早上好，程宗鑫');
       }
 
-      const days = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
-      setCurrentDate(now.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' }));
-      setCurrentDay(days[now.getDay()]);
+      // 使用 Intl.DateTimeFormat 获取本地化的日期和星期
+      const dateFormatter = new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
+      const dayFormatter = new Intl.DateTimeFormat('zh-CN', { weekday: 'long' });
+      
+      setCurrentDate(dateFormatter.format(now));
+      setCurrentDay(dayFormatter.format(now));
     };
 
+    // 获取天气数据
     const fetchWeatherData = async () => {
       try {
+        // 使用和风天气 API
         const response = await axios.get(
-          `https://api.openweathermap.org/data/2.5/weather?q=${CITY}&appid=${OPENWEATHERMAP_API_KEY}&units=metric&lang=zh_cn`
+          `https://devapi.qweather.com/v7/weather/now?location=101010100&key=YOUR_QWEATHER_API_KEY`
         );
-        setWeather(response.data.weather[0].description);
-        setTemperature(`${Math.round(response.data.main.temp)}°C`);
-        setWeatherIcon(`http://openweathermap.org/img/wn/${response.data.weather[0].icon}@2x.png`);
+        setWeather(response.data.now.text);
+        setTemperature(`${response.data.now.temp}°C`);
+        setWeatherIcon(`https://a.hecdn.net/img/common/icon/202106d/${response.data.now.icon}.png`);
       } catch (error) {
-        console.error('Error fetching weather data:', error);
+        console.error('获取天气数据时出错:', error);
       }
     };
 
@@ -58,19 +66,26 @@ export default function HomePage() {
     };
   }, []);
 
-  const IconPlaceholder = ({ label, onPress }) => (
+  // 图标组件
+  const IconButton = ({ name, label, onPress }) => (
     <TouchableOpacity style={styles.iconContainer} onPress={onPress}>
-      <View style={[styles.icon, isDarkMode && styles.darkIcon]} />
+      <Ionicons name={name} size={24} color={isDarkMode ? '#fff' : '#000'} />
       <Text style={[styles.iconLabel, isDarkMode && styles.darkText]}>{label}</Text>
     </TouchableOpacity>
   );
 
   return (
-    <SafeAreaView style={[styles.container, isDarkMode && styles.darkContainer]}>
-      <ScrollView>
+    <View style={[styles.container, isDarkMode && styles.darkContainer]}>
+      <StatusBar translucent backgroundColor="transparent" barStyle={isDarkMode ? "light-content" : "dark-content"} />
+      <ScrollView
+        contentContainerStyle={{
+          paddingTop: insets.top,
+          paddingBottom: insets.bottom,
+        }}
+      >
         <View style={styles.header}>
           <Text style={[styles.greeting, isDarkMode && styles.darkText]}>{greeting}</Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => setIsDarkMode(!isDarkMode)}>
             <Text style={styles.expandIcon}>{isDarkMode ? '🌙' : '☀️'}</Text>
           </TouchableOpacity>
         </View>
@@ -100,14 +115,14 @@ export default function HomePage() {
           <Text style={styles.bannerSubtext}>更多组件任你配 »</Text>
         </View>
         <View style={styles.iconsGrid}>
-          <IconPlaceholder label="视频" onPress={() => router.push('/(page)/movieList')} />
-          <IconPlaceholder label="签到" onPress={() => {}} />
-          <IconPlaceholder label="请假" onPress={() => {}} />
-          <IconPlaceholder label="我的加班" onPress={() => {}} />
-          <IconPlaceholder label="积分" onPress={() => {}} />
-          <IconPlaceholder label="我的申请" />
-          <IconPlaceholder label="我的档案" />
-          <IconPlaceholder label="更多" />
+          <IconButton name="videocam" label="视频" onPress={() => router.push('/(page)/movieList')} />
+          <IconButton name="calendar" label="签到" onPress={() => {}} />
+          <IconButton name="briefcase" label="请假" onPress={() => {}} />
+          <IconButton name="time" label="我的加班" onPress={() => {}} />
+          <IconButton name="star" label="积分" onPress={() => {}} />
+          <IconButton name="document-text" label="我的申请" onPress={() => {}} />
+          <IconButton name="person" label="我的档案" onPress={() => {}} />
+          <IconButton name="ellipsis-horizontal" label="更多" onPress={() => {}} />
         </View>
 
         <View style={styles.promotionBanner}>
@@ -126,7 +141,7 @@ export default function HomePage() {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
