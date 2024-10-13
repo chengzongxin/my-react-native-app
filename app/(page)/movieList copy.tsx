@@ -3,6 +3,7 @@ import { View, Text, Image, StyleSheet, TextInput, Dimensions, FlatList, ListRen
 import { Search } from 'lucide-react-native';
 import { Href, router, useNavigation } from 'expo-router';
 import axios from 'axios';
+import { TabView, SceneMap } from 'react-native-tab-view';
 
 // 更新接口返回的数据类型
 interface FileItem {
@@ -24,6 +25,12 @@ const MovieList: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(0);
   const flatListRef = useRef<FlatList<FileItem>>(null);
   const autoScrollTimer = useRef<NodeJS.Timeout | null>(null);
+  const [index, setIndex] = useState(0);
+  const [routes] = useState([
+    { key: 'first', title: '首页' },
+    { key: 'second', title: '电影' },
+    // 添加更多标签
+  ]);
 
   useEffect(() => {
     fetchFiles();
@@ -81,6 +88,17 @@ const MovieList: React.FC = () => {
     </TouchableOpacity>
   );
 
+
+const FirstRoute = () => {
+  // 这里是第一个标签的内容
+  return <FlatList<FileItem> data={files} renderItem={renderMovieItem} />;
+};
+
+const SecondRoute = () => {
+  // 这里是第二个标签的内容
+  return <FlatList<FileItem> data={files} renderItem={renderMovieItem} />;
+};
+
   const scrollToIndex = useCallback((index: number) => {
     flatListRef.current?.scrollToOffset({
       offset: index * (BANNER_WIDTH + BANNER_SPACING),
@@ -108,15 +126,21 @@ const MovieList: React.FC = () => {
     return () => stopAutoScroll();
   }, [startAutoScroll, stopAutoScroll]);
 
-  const renderHeader = () => (
-    <>
-      {/* 顶部分类导航 */}
-      <View style={styles.header}>
-        {['首页', '电影', '电视剧', '动漫', '综艺'].map((category, index) => (
-          <Text key={index} style={[styles.category, index === 0 ? styles.activeCategory : null]}>{category}</Text>
-        ))}
-      </View>
-      
+  const renderScene = SceneMap({
+    first: FirstRoute,
+    second: SecondRoute,
+    // 添加更多标签的场景
+  });
+
+  return (
+    <View style={styles.container}>
+      {/* 顶部分类导��� */}
+      <TabView
+        navigationState={{ index, routes }}
+        renderScene={renderScene}
+        onIndexChange={setIndex}
+        initialLayout={{ width: Dimensions.get('window').width }}
+      />
       {/* 搜索栏 */}
       <View style={styles.searchBar}>
         <Search color="#999" size={20} style={styles.searchIcon} />
@@ -126,61 +150,6 @@ const MovieList: React.FC = () => {
           placeholderTextColor="#999"
         />
       </View>
-      
-      {/* 轮播图 */}
-      <FlatList<FileItem>
-        ref={flatListRef}
-        data={files.filter(file => !file.directory).slice(0, 5)}
-        renderItem={renderBannerItem}
-        keyExtractor={(item) => item.path}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        snapToInterval={BANNER_WIDTH + BANNER_SPACING}
-        decelerationRate="fast"
-        contentContainerStyle={styles.bannerList}
-        onScrollBeginDrag={stopAutoScroll}
-        onScrollEndDrag={startAutoScroll}
-        onMomentumScrollEnd={(event) => {
-          const newPage = Math.round(event.nativeEvent.contentOffset.x / (BANNER_WIDTH + BANNER_SPACING));
-          setCurrentPage(newPage);
-        }}
-        getItemLayout={(data, index) => ({
-          length: BANNER_WIDTH + BANNER_SPACING,
-          offset: (BANNER_WIDTH + BANNER_SPACING) * index,
-          index,
-        })}
-      />
-      
-      {/* 轮播图分页指示器 */}
-      <View style={styles.paginationDots}>
-        {files.filter(file => !file.directory).slice(0, 5).map((_, index) => (
-          <View
-            key={index}
-            style={[
-              styles.paginationDot,
-              index === currentPage ? styles.paginationDotActive : null,
-            ]}
-          />
-        ))}
-      </View>
-      
-      {/* 电影列表标题 */}
-      <Text style={styles.sectionTitle}>视频列表</Text>
-    </>
-  );
-
-  return (
-    <View style={styles.container}>
-      <FlatList<FileItem>
-        ListHeaderComponent={renderHeader}
-        data={files.filter(file => !file.directory)}
-        renderItem={renderMovieItem}
-        keyExtractor={(item) => item.path}
-        numColumns={2}
-        columnWrapperStyle={styles.row}
-        contentContainerStyle={styles.listContainer}
-      />
     </View>
   );
 };
@@ -192,15 +161,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#1a1a1a',
   },
   header: {
-    position: 'absolute', // 使导航固定在顶部
-    top: 0,
-    left: 0,
-    right: 0,
     flexDirection: 'row',
     justifyContent: 'space-around',
     paddingVertical: 12,
     backgroundColor: '#000', // 将背景色改为黑色
-    zIndex: 1, // 确保导航在其他元素之上
   },
   category: {
     color: '#999',
