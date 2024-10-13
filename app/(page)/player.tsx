@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Dimensions, TouchableOpacity, Alert } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -82,12 +82,6 @@ const Player: React.FC = () => {
       setIsFullscreen(!isFullscreen);
     }
   };
-
-  useEffect(() => {
-    return () => {
-      ScreenOrientation.unlockAsync();
-    };
-  }, []);
 
   return (
     <View style={styles.container}>
