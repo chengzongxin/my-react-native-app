@@ -1,151 +1,129 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, Image, StyleSheet, TextInput, TouchableOpacity, Dimensions, FlatList, ListRenderItem } from 'react-native';
-import { Home, Search, PlayCircle, Download, User } from 'lucide-react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Image, StyleSheet, TextInput, Dimensions, FlatList, ListRenderItem } from 'react-native';
+import { Search } from 'lucide-react-native';
 
-// 定义类型
-interface Banner {
-  title: string;
-  image: string;
+// 更新接口返回的数据类型
+interface FileItem {
+  name: string;
+  path: string;
+  children: FileItem[] | null;
+  thumbnail: string | null;
+  directory: boolean;
 }
 
-interface Movie {
-  title: string;
-  image: string;
-  rating: string;
-  type: string;
-}
-
-// 获取屏幕宽度，用于计算banner尺寸
 const { width } = Dimensions.get('window');
 const BANNER_WIDTH = width * 0.8;
 const BANNER_SPACING = width * 0.1;
+const SERVER_IP = '192.168.10.111';
 
 const MovieApp: React.FC = () => {
-  // 定义分类、轮播图和电影数据
-  const categories: string[] = ['小说', '推荐', '电影', '电视剧', '动漫'];
-  const banners: Banner[] = [
-    { title: '流浪地球2', image: 'https://img9.doubanio.com/view/photo/s_ratio_poster/public/p2885955777.webp' },
-    { title: '满江红', image: 'https://img9.doubanio.com/view/photo/s_ratio_poster/public/p2886444616.webp' },
-    { title: '无名', image: 'https://img9.doubanio.com/view/photo/s_ratio_poster/public/p2886492021.webp' },
-  ];
-  const movies: Movie[] = [
-    { title: '满江红', image: 'https://img9.doubanio.com/view/photo/s_ratio_poster/public/p2886444616.webp', rating: '7.3', type: '剧情' },
-    { title: '流浪地球2', image: 'https://img9.doubanio.com/view/photo/s_ratio_poster/public/p2885955777.webp', rating: '8.3', type: '科幻' },
-    { title: '无名', image: 'https://img9.doubanio.com/view/photo/s_ratio_poster/public/p2886492021.webp', rating: '7.3', type: '悬疑' },
-    { title: '中国乒乓', image: 'https://img9.doubanio.com/view/photo/s_ratio_poster/public/p2886491845.webp', rating: '7.2', type: '体育' },
-    // Add more movies here...
-  ];
-
-  // 用于轮播图分页的状态
+  const [files, setFiles] = useState<FileItem[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(0);
 
-  // 渲染轮播图项目
-  const renderBannerItem: ListRenderItem<Banner> = ({ item }) => (
+  useEffect(() => {
+    fetchFiles();
+  }, []);
+
+  const fetchFiles = async () => {
+    try {
+      const response = await fetch(`http://${SERVER_IP}:8080/files/scan`);
+      const data = await response.json();
+      setFiles(data);
+    } catch (error) {
+      console.error('Error fetching files:', error);
+    }
+  };
+
+  // 更新渲染轮播图项目函数
+  const renderBannerItem: ListRenderItem<FileItem> = ({ item }) => (
+    
+    
     <View style={styles.bannerItem}>
-      <Image source={{ uri: item.image }} style={styles.bannerImage} resizeMode="cover" />
-      <Text style={styles.bannerTitle}>{item.title}</Text>
+      <Image 
+        source={{ uri: item.thumbnail!}} 
+        style={styles.bannerImage} 
+        resizeMode="cover" 
+      />
+      <Text style={styles.bannerTitle}>{item.name}</Text>
     </View>
   );
 
-  // 渲染电影项目
-  const renderMovieItem: ListRenderItem<Movie> = ({ item }) => (
+  // 更新渲染电影项目函数
+  const renderMovieItem: ListRenderItem<FileItem> = ({ item }) => (
     <View style={styles.movieItem}>
-      <Image source={{ uri: item.image }} style={styles.movieImage} resizeMode="cover" />
-      <Text style={styles.movieTitle} numberOfLines={1}>{item.title}</Text>
-      <View style={styles.movieInfo}>
-        <Text style={styles.movieRating}>{item.rating}</Text>
-        <Text style={styles.movieType}>{item.type}</Text>
-      </View>
+      <Image 
+        source={{ uri: item.thumbnail! }} 
+        style={styles.movieImage} 
+        resizeMode="cover" 
+      />
+      <Text style={styles.movieTitle} numberOfLines={1}>{item.name}</Text>
     </View>
+  );
+
+  const renderHeader = () => (
+    <>
+      {/* 顶部分类导航 */}
+      <View style={styles.header}>
+        {['首页', '电影', '电视剧', '动漫', '综艺'].map((category, index) => (
+          <Text key={index} style={[styles.category, index === 0 ? styles.activeCategory : null]}>{category}</Text>
+        ))}
+      </View>
+      
+      {/* 搜索栏 */}
+      <View style={styles.searchBar}>
+        <Search color="#999" size={20} style={styles.searchIcon} />
+        <TextInput 
+          style={styles.searchInput} 
+          placeholder="搜索视频" 
+          placeholderTextColor="#999"
+        />
+      </View>
+      
+      {/* 轮播图 */}
+      <FlatList<FileItem>
+        data={files.filter(file => !file.directory).slice(0, 5)}
+        renderItem={renderBannerItem}
+        keyExtractor={(item) => item.path}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        snapToInterval={BANNER_WIDTH + BANNER_SPACING}
+        decelerationRate="fast"
+        contentContainerStyle={styles.bannerList}
+        onMomentumScrollEnd={(event) => {
+          const newPage = Math.round(event.nativeEvent.contentOffset.x / (BANNER_WIDTH + BANNER_SPACING));
+          setCurrentPage(newPage);
+        }}
+      />
+      
+      {/* 轮播图分页指示器 */}
+      <View style={styles.paginationDots}>
+        {files.filter(file => !file.directory).slice(0, 5).map((_, index) => (
+          <View
+            key={index}
+            style={[
+              styles.paginationDot,
+              index === currentPage ? styles.paginationDotActive : null,
+            ]}
+          />
+        ))}
+      </View>
+      
+      {/* 电影列表标题 */}
+      <Text style={styles.sectionTitle}>视频列表</Text>
+    </>
   );
 
   return (
     <View style={styles.container}>
-      <ScrollView>
-        {/* 顶部分类导航 */}
-        <View style={styles.header}>
-          {categories.map((category, index) => (
-            <Text key={index} style={[styles.category, index === 2 ? styles.activeCategory : null]}>{category}</Text>
-          ))}
-        </View>
-        
-        {/* 搜索栏 */}
-        <View style={styles.searchBar}>
-          <Search color="#999" size={20} style={styles.searchIcon} />
-          <TextInput 
-            style={styles.searchInput} 
-            placeholder="搜索片" 
-            placeholderTextColor="#999"
-          />
-        </View>
-        
-        {/* 轮播图 */}
-        <FlatList<Banner>
-          data={banners}
-          renderItem={renderBannerItem}
-          keyExtractor={(item, index) => index.toString()}
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          snapToInterval={BANNER_WIDTH + BANNER_SPACING}
-          decelerationRate="fast"
-          contentContainerStyle={styles.bannerList}
-          onMomentumScrollEnd={(event) => {
-            const newPage = Math.round(event.nativeEvent.contentOffset.x / (BANNER_WIDTH + BANNER_SPACING));
-            setCurrentPage(newPage);
-          }}
-        />
-        
-        {/* 轮播图分页指示器 */}
-        <View style={styles.paginationDots}>
-          {banners.map((_, index) => (
-            <View
-              key={index}
-              style={[
-                styles.paginationDot,
-                index === currentPage ? styles.paginationDotActive : null,
-              ]}
-            />
-          ))}
-        </View>
-        
-        {/* 电影列表标题 */}
-        <Text style={styles.sectionTitle}>首播影院</Text>
-        
-        {/* 电影列表 */}
-        <FlatList<Movie>
-          data={movies}
-          renderItem={renderMovieItem}
-          keyExtractor={(item, index) => index.toString()}
-          numColumns={2}
-          columnWrapperStyle={styles.movieRow}
-          contentContainerStyle={styles.movieList}
-        />
-      </ScrollView>
-      
-      {/* 底部导航栏 */}
-      <View style={styles.tabBar}>
-        <TouchableOpacity style={styles.tabItem}>
-          <Home color="#fff" size={24} />
-          <Text style={styles.tabText}>首页</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.tabItem}>
-          <Search color="#fff" size={24} />
-          <Text style={styles.tabText}>搜索</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.tabItem}>
-          <PlayCircle color="#fff" size={24} />
-          <Text style={styles.tabText}>播放</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.tabItem}>
-          <Download color="#fff" size={24} />
-          <Text style={styles.tabText}>下载</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.tabItem}>
-          <User color="#fff" size={24} />
-          <Text style={styles.tabText}>我的</Text>
-        </TouchableOpacity>
-      </View>
+      <FlatList<FileItem>
+        ListHeaderComponent={renderHeader}
+        data={files.filter(file => !file.directory)}
+        renderItem={renderMovieItem}
+        keyExtractor={(item) => item.path}
+        numColumns={3}
+        columnWrapperStyle={styles.movieRow}
+      />
     </View>
   );
 };
@@ -160,8 +138,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    backgroundColor: '#1a1a1a', // 设置和页面一样的背景色
   },
   category: {
     color: '#999',
@@ -266,23 +243,6 @@ const styles = StyleSheet.create({
   movieType: {
     color: '#999',
     fontSize: 12,
-  },
-  tabBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    height: 50,
-    backgroundColor: '#222',
-    borderTopWidth: 1,
-    borderTopColor: '#333',
-  },
-  tabItem: {
-    alignItems: 'center',
-  },
-  tabText: {
-    color: '#fff',
-    fontSize: 12,
-    marginTop: 2,
   },
 });
 
