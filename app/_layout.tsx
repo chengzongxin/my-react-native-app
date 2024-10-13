@@ -5,6 +5,8 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
+// import GoogleCast, { useDevices, CastContext } from 'react-native-google-cast';
+// import { cast } from 'chromecast-caf-sender';
 
 import { useColorScheme } from '@/components/useColorScheme';
 
@@ -37,6 +39,13 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
     }
   }, [loaded]);
+
+  useEffect(() => {
+    // Temporarily disabled Chromecast functionality
+    // CastContext.getInstance().setOptions({
+    //   receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+    // });
+  }, []);
 
   if (!loaded) {
     return null;

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, Image, StyleSheet, TextInput, Dimensions, FlatList, ListRenderItem } from 'react-native';
+import { View, Text, Image, StyleSheet, TextInput, Dimensions, FlatList, ListRenderItem, TouchableOpacity } from 'react-native';
 import { Search } from 'lucide-react-native';
+import { Href, router } from 'expo-router';
 
 // 更新接口返回的数据类型
 interface FileItem {
@@ -52,14 +53,17 @@ const MovieList: React.FC = () => {
 
   // 更新渲染电影项目函数
   const renderMovieItem: ListRenderItem<FileItem> = ({ item }) => (
-    <View style={styles.movieItem}>
+    <TouchableOpacity 
+      style={styles.movieItem}
+      onPress={() => router.push(`/player?path=${encodeURIComponent(item.path)}` as Href<string>)}
+    >
       <Image 
         source={{ uri: item.thumbnail! }} 
         style={styles.movieImage} 
         resizeMode="cover" 
       />
       <Text style={styles.movieTitle} numberOfLines={2}>{item.name}</Text>
-    </View>
+    </TouchableOpacity>
   );
 
   const scrollToIndex = useCallback((index: number) => {
