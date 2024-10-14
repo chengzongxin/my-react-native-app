@@ -3,6 +3,7 @@ import { View, Text, Image, StyleSheet, TextInput, Dimensions, FlatList, ListRen
 import { Search } from 'lucide-react-native';
 import { Href, router, useNavigation } from 'expo-router';
 import axios from 'axios';
+import { TabView, SceneMap, TabBar } from 'react-native-tab-view'; // 确保导入TabBar
 
 // 更新接口返回的数据类型
 interface FileItem {
@@ -24,6 +25,14 @@ const MovieList: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(0);
   const flatListRef = useRef<FlatList<FileItem>>(null);
   const autoScrollTimer = useRef<NodeJS.Timeout | null>(null);
+  const [index, setIndex] = useState(0); // 管理当前Tab索引
+  const [routes] = useState([
+    { key: 'home', title: '首页' },
+    { key: 'movie', title: '电影' },
+    { key: 'tv', title: '电视剧' },
+    { key: 'anime', title: '动漫' },
+    { key: 'variety', title: '综艺' },
+  ]);
 
   useEffect(() => {
     fetchFiles();
@@ -108,15 +117,32 @@ const MovieList: React.FC = () => {
     return () => stopAutoScroll();
   }, [startAutoScroll, stopAutoScroll]);
 
+  // 更新渲染Tab的函数
+  const renderScene = SceneMap({
+    home: () => <View><Text>首页内容</Text></View>, // 示例内容
+    movie: () => <View><Text>电影内容</Text></View>, // 示例内容
+    tv: () => <View><Text>电视剧内容</Text></View>, // 示例内容
+    anime: () => <View><Text>动漫内容</Text></View>, // 示例内容
+    variety: () => <View><Text>综艺内容</Text></View>, // 示例内容
+  });
+
+  // 自定义TabBar的渲染函数
+  const renderTabBar = (props: any) => (
+    <TabBar
+      {...props}
+      style={styles.tabBar} // 自定义TabBar样式
+      indicatorStyle={styles.indicator} // 隐藏下划线
+      renderLabel={({ route, focused }) => (
+        <Text style={[styles.tabLabel, focused ? styles.activeTabLabel : null]}>
+          {route.title}
+        </Text>
+      )}
+    />
+  );
+
+  // 更新渲染头部的函数
   const renderHeader = () => (
     <>
-      {/* 顶部分类导航 */}
-      <View style={styles.header}>
-        {['首页', '电影', '电视剧', '动漫', '综艺'].map((category, index) => (
-          <Text key={index} style={[styles.category, index === 0 ? styles.activeCategory : null]}>{category}</Text>
-        ))}
-      </View>
-      
       {/* 搜索栏 */}
       <View style={styles.searchBar}>
         <Search color="#999" size={20} style={styles.searchIcon} />
@@ -172,6 +198,16 @@ const MovieList: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      {/* 将TabView移到FlatList外部 */}
+      <TabView
+        navigationState={{ index, routes }}
+        renderScene={renderScene}
+        onIndexChange={setIndex} // 处理Tab切换
+        initialLayout={{ width: Dimensions.get('window').width }}
+        renderTabBar={renderTabBar} // 使用自定义TabBar
+        style={styles.tabView} // 添加样式
+      />
+      
       <FlatList<FileItem>
         ListHeaderComponent={renderHeader}
         data={files.filter(file => !file.directory)}
@@ -312,6 +348,27 @@ const styles = StyleSheet.create({
   movieType: {
     color: '#999',
     fontSize: 12,
+  },
+  tabView: {
+    backgroundColor: '#000', // Tab背景色
+    margin: 0, // 去掉边距
+    padding: 0, // 去掉填充
+  },
+  tabBar: {
+    backgroundColor: '#000', // TabBar背景色
+    paddingVertical: 0, // 去掉垂直填充
+  },
+  indicator: {
+    backgroundColor: 'transparent', // 隐藏下划线
+  },
+  tabLabel: {
+    color: '#999', // 默认标签颜色
+    fontSize: 15,
+  },
+  activeTabLabel: {
+    color: '#fff', // 选中标签颜色
+    fontWeight: 'bold', // 选中时加粗
+    fontSize: 15, // 选中时增大字体
   },
 });
 
