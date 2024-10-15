@@ -119,11 +119,56 @@ const MovieList: React.FC = () => {
 
   // 更新渲染Tab的函数
   const renderScene = SceneMap({
-    home: () => <View><Text>首页内容</Text></View>, // 示例内容
-    movie: () => <View><Text>电影内容</Text></View>, // 示例内容
-    tv: () => <View><Text>电视剧内容</Text></View>, // 示例内容
-    anime: () => <View><Text>动漫内容</Text></View>, // 示例内容
-    variety: () => <View><Text>综艺内容</Text></View>, // 示例内容
+    home: () => (
+      <FlatList<FileItem>
+        data={files.filter(file => !file.directory)} // 这里可以根据需要过滤数据
+        renderItem={renderMovieItem} // 使用现有的渲染电影项目函数
+        keyExtractor={(item) => item.path}
+        numColumns={2} // 设置为两列
+        contentContainerStyle={styles.listContainer}
+        ListHeaderComponent={renderHeader} // 添加头部组件
+      />
+    ), // 示例内容
+    movie: () => (
+      <FlatList<FileItem>
+        data={files.filter(file => !file.directory)} // 这里可以根据需要过滤数据
+        renderItem={renderMovieItem} // 使用现有的渲染电影项目函数
+        keyExtractor={(item) => item.path}
+        numColumns={2} // 设置为两列
+        contentContainerStyle={styles.listContainer}
+        ListHeaderComponent={renderHeader} // 添加头部组件
+      />
+    ), // 示例内容
+    tv: () => (
+      <FlatList<FileItem>
+        data={files.filter(file => !file.directory)} // 这里可以根据需要过滤数据
+        renderItem={renderMovieItem} // 使用现有的渲染电影项目函数
+        keyExtractor={(item) => item.path}
+        numColumns={2} // 设置为两列
+        contentContainerStyle={styles.listContainer}
+        ListHeaderComponent={renderHeader} // 添加头部组件
+      />
+    ), // 示例内容
+    anime: () => (
+      <FlatList<FileItem>
+        data={files.filter(file => !file.directory)} // 这里可以根据需要过滤数据
+        renderItem={renderMovieItem} // 使用现有的渲染电影项目函数
+        keyExtractor={(item) => item.path}
+        numColumns={2} // 设置为两列
+        contentContainerStyle={styles.listContainer}
+        ListHeaderComponent={renderHeader} // 添加头部组件
+      />
+    ), // 示例内容
+    variety: () => (
+      <FlatList<FileItem>
+        data={files.filter(file => !file.directory)} // 这里可以根据需要过滤数据
+        renderItem={renderMovieItem} // 使用现有的渲染电影项目函数
+        keyExtractor={(item) => item.path}
+        numColumns={2} // 设置为两列
+        contentContainerStyle={styles.listContainer}
+        ListHeaderComponent={renderHeader} // 添加头部组件
+      />
+    ), // 示例内容
   });
 
   // 自定义TabBar的渲染函数
@@ -206,16 +251,6 @@ const MovieList: React.FC = () => {
         initialLayout={{ width: Dimensions.get('window').width }}
         renderTabBar={renderTabBar} // 使用自定义TabBar
         style={styles.tabView} // 添加样式
-      />
-      
-      <FlatList<FileItem>
-        ListHeaderComponent={renderHeader}
-        data={files.filter(file => !file.directory)}
-        renderItem={renderMovieItem}
-        keyExtractor={(item) => item.path}
-        numColumns={2}
-        columnWrapperStyle={styles.row}
-        contentContainerStyle={styles.listContainer}
       />
     </View>
   );
