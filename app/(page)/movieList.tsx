@@ -32,9 +32,23 @@ const MovieList: React.FC = () => {
     { key: 'anime', title: '动漫' },
     { key: 'variety', title: '综艺' },
   ]);
+  const [homeFiles, setHomeFiles] = useState<FileItem[]>([]);
+  const [movieFiles, setMovieFiles] = useState<FileItem[]>([]);
+  const [tvFiles, setTvFiles] = useState<FileItem[]>([]);
+  const [animeFiles, setAnimeFiles] = useState<FileItem[]>([]);
+  const [varietyFiles, setVarietyFiles] = useState<FileItem[]>([]);
 
   useEffect(() => {
-    fetchFiles();
+    const loadData = async () => {
+      setHomeFiles(await fetchFiles('movie'));
+      setMovieFiles(await fetchFiles('stream'));
+      setTvFiles(await fetchFiles('tv'));
+      setAnimeFiles(await fetchFiles('anime'));
+      setVarietyFiles(await fetchFiles('variety'));
+    };
+
+    loadData();
+
     navigation.setOptions({
       title: '视频列表',
       headerStyle: {
@@ -48,12 +62,13 @@ const MovieList: React.FC = () => {
     });
   }, [navigation]);
 
-  const fetchFiles = async () => {
+  const fetchFiles = async (type: string) => {
     try {
-      const response = await axios.get(`http://${SERVER_IP}:8080/files/scan?type=movie`)
-      setFiles(response.data);
+      const response = await axios.get(`http://${SERVER_IP}:8080/files/scan?type=${type}`);
+      return response.data;
     } catch (error) {
       console.error('Error fetching files:', error);
+      return [];
     }
   };
 
@@ -113,54 +128,54 @@ const MovieList: React.FC = () => {
   const renderScene = SceneMap({
     home: () => (
       <FlatList<FileItem>
-        data={files.filter(file => !file.directory)} // 这里可以根据需要过滤数据
-        renderItem={renderMovieItem} // 使用现有的渲染电影项目函数
+        data={homeFiles}
+        renderItem={renderMovieItem}
         keyExtractor={(item) => item.path}
-        numColumns={2} // 设置为两列
+        numColumns={2}
         contentContainerStyle={styles.listContainer}
-        ListHeaderComponent={renderHeader} // 添加头部组件
+        ListHeaderComponent={renderHeader}
       />
-    ), // 示例内容
+    ),
     movie: () => (
       <FlatList<FileItem>
-        data={files.filter(file => !file.directory)} // 这里可以根据需要过滤数据
-        renderItem={renderMovieItem} // 使用现有的渲染电影项目函数
+        data={movieFiles}
+        renderItem={renderMovieItem}
         keyExtractor={(item) => item.path}
-        numColumns={2} // 设置为两列
+        numColumns={2}
         contentContainerStyle={styles.listContainer}
-        ListHeaderComponent={renderHeader} // 添加头部组件
+        ListHeaderComponent={renderHeader}
       />
-    ), // 示例内容
+    ),
     tv: () => (
       <FlatList<FileItem>
-        data={files.filter(file => !file.directory)} // 这里可以根据需要过滤数据
-        renderItem={renderMovieItem} // 使用现有的渲染电影项目函数
+        data={tvFiles}
+        renderItem={renderMovieItem}
         keyExtractor={(item) => item.path}
-        numColumns={2} // 设置为两列
+        numColumns={2}
         contentContainerStyle={styles.listContainer}
-        ListHeaderComponent={renderHeader} // 添加头部组件
+        ListHeaderComponent={renderHeader}
       />
-    ), // 示例内容
+    ),
     anime: () => (
       <FlatList<FileItem>
-        data={files.filter(file => !file.directory)} // 这里可以根据需要过滤数据
-        renderItem={renderMovieItem} // 使用现有的渲染电影项目函数
+        data={animeFiles}
+        renderItem={renderMovieItem}
         keyExtractor={(item) => item.path}
-        numColumns={2} // 设置为两列
+        numColumns={2}
         contentContainerStyle={styles.listContainer}
-        ListHeaderComponent={renderHeader} // 添加头部组件
+        ListHeaderComponent={renderHeader}
       />
-    ), // 示例内容
+    ),
     variety: () => (
       <FlatList<FileItem>
-        data={files.filter(file => !file.directory)} // 这里可以根据需要过滤数据
-        renderItem={renderMovieItem} // 使用现有的渲染电影项目函数
+        data={varietyFiles}
+        renderItem={renderMovieItem}
         keyExtractor={(item) => item.path}
-        numColumns={2} // 设置为两列
+        numColumns={2}
         contentContainerStyle={styles.listContainer}
-        ListHeaderComponent={renderHeader} // 添加头部组件
+        ListHeaderComponent={renderHeader}
       />
-    ), // 示例内容
+    ),
   });
 
   // 自定义TabBar的渲染函数
@@ -193,7 +208,7 @@ const MovieList: React.FC = () => {
       {/* 轮播图 */}
       <FlatList<FileItem>
         ref={flatListRef}
-        data={files.filter(file => !file.directory).slice(0, 5)}
+        data={homeFiles.filter(file => !file.directory).slice(0, 5)}
         renderItem={renderBannerItem}
         keyExtractor={(item) => item.path}
         horizontal
@@ -202,13 +217,11 @@ const MovieList: React.FC = () => {
         snapToInterval={BANNER_WIDTH + BANNER_SPACING}
         decelerationRate="fast"
         contentContainerStyle={styles.bannerList}
-        onScrollBeginDrag={stopAutoScroll} // 停止自动滚动
-        onScrollEndDrag={startAutoScroll} // 重新启动自动滚动
+        onScrollBeginDrag={stopAutoScroll}
+        onScrollEndDrag={startAutoScroll}
         onMomentumScrollEnd={(event) => {
           const newPage = Math.round(event.nativeEvent.contentOffset.x / (BANNER_WIDTH + BANNER_SPACING));
           setCurrentPage(newPage);
-          // 这里可以选择不立即启动自动滚动
-          // startAutoScroll(); // 注释掉这一行
         }}
         getItemLayout={(data, index) => ({
           length: BANNER_WIDTH + BANNER_SPACING,
@@ -219,7 +232,7 @@ const MovieList: React.FC = () => {
       
       {/* 轮播图分页指示器 */}
       <View style={styles.paginationDots}>
-        {files.filter(file => !file.directory).slice(0, 5).map((_, index) => (
+        {homeFiles.filter(file => !file.directory).slice(0, 5).map((_, index) => (
           <View
             key={index}
             style={[
