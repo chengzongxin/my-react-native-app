@@ -24,7 +24,6 @@ const MovieList: React.FC = () => {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(0);
   const flatListRef = useRef<FlatList<FileItem>>(null);
-  const autoScrollTimer = useRef<NodeJS.Timeout | null>(null);
   const [index, setIndex] = useState(0); // 管理当前Tab索引
   const [routes] = useState([
     { key: 'home', title: '首页' },
@@ -99,22 +98,15 @@ const MovieList: React.FC = () => {
   }, []);
 
   const startAutoScroll = useCallback(() => {
-    autoScrollTimer.current = setInterval(() => {
-      const nextPage = (currentPage + 1) % (files.filter(file => !file.directory).slice(0, 5).length);
-      scrollToIndex(nextPage);
-    }, 3000);
-  }, [currentPage, files, scrollToIndex]);
+    // 删除这个函数
+  }, []);
 
   const stopAutoScroll = useCallback(() => {
-    if (autoScrollTimer.current) {
-      clearInterval(autoScrollTimer.current);
-      autoScrollTimer.current = null;
-    }
+    // 删除这个函数
   }, []);
 
   useEffect(() => {
-    startAutoScroll();
-    return () => stopAutoScroll();
+    // 删除这个 useEffect
   }, [startAutoScroll, stopAutoScroll]);
 
   // 更新渲染Tab的函数
@@ -210,11 +202,13 @@ const MovieList: React.FC = () => {
         snapToInterval={BANNER_WIDTH + BANNER_SPACING}
         decelerationRate="fast"
         contentContainerStyle={styles.bannerList}
-        onScrollBeginDrag={stopAutoScroll}
-        onScrollEndDrag={startAutoScroll}
+        onScrollBeginDrag={stopAutoScroll} // 停止自动滚动
+        onScrollEndDrag={startAutoScroll} // 重新启动自动滚动
         onMomentumScrollEnd={(event) => {
           const newPage = Math.round(event.nativeEvent.contentOffset.x / (BANNER_WIDTH + BANNER_SPACING));
           setCurrentPage(newPage);
+          // 这里可以选择不立即启动自动滚动
+          // startAutoScroll(); // 注释掉这一行
         }}
         getItemLayout={(data, index) => ({
           length: BANNER_WIDTH + BANNER_SPACING,
@@ -357,8 +351,9 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   movieItem: {
-    width: (width - 30) / 2,
-    marginBottom: 20,
+    width: (width - 40) / 2, // 增加边距
+    marginBottom: 20, // 保持底部间距
+    marginHorizontal: 5, // 增加左右间距
   },
   movieImage: {
     width: '100%',
